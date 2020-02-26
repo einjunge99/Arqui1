@@ -73,6 +73,27 @@ bool modoAutomatico = true;
 
 
 //Modo manual
+typedef struct {
+    char nombre[SIZENAME];
+    char instrucciones[STEPSIZE];
+    int timer[TIMESIZE];
+} info;
+ 
+info R1 = {"", {'X','X','X','X','X','X','X','X','X','X'},{0,0,0,0,0,0,0,0,0,0}};
+info R2 = {"", {'X','X','X','X','X','X','X','X','X','X'},{0,0,0,0,0,0,0,0,0,0}};
+info R3 = {"", {'X','X','X','X','X','X','X','X','X','X'},{0,0,0,0,0,0,0,0,0,0}};
+
+
+ 
+info lista[SIZEROUTES] ={
+    R1,
+    R2,
+    R3
+};
+
+
+
+
 String nombre="";
 String timer="";
 
@@ -84,6 +105,25 @@ int ID=0;
 /*
   ------------------------------Fin de variables----------------------------------
 */
+
+/*
+ * ----------------------------Buscar ruta
+ */
+
+
+int buscarRuta(String nombre){
+  char *s;
+  char param[10];
+  nombre.toCharArray(param,10);
+  for(int i=0;i<SIZEROUTES;i++){
+       s = strstr(lista[i].nombre,param); 
+     if (s != NULL){
+      return i;
+     }
+    
+    }
+  return 0;
+}
 
 /*
  * ----------------------------Inicializar la EEPROM
@@ -148,6 +188,21 @@ switch(actual){
        else if(entrada=='C'){
         actual=5;
         }
+        else if(entrada=='S'){
+        char *s;
+        char param[10]="";
+        String envio="";
+        for(int i=0;i<3;i++){
+        s = strstr(lista[i].nombre,param); 
+        if (s != NULL){
+          envio+=lista[i].nombre;
+          if(i!=2){
+             envio+=",";
+            }
+        }
+    
+    }
+       }
     break;
     case 1:  
     if(entrada=='/'){
@@ -223,7 +278,8 @@ switch(actual){
 /*
   --------------------Movimiento--------------------
 */
-void adelante(int cDelay){
+void adelante(int param){
+  int cDelay=param*10000;
   // Encendido
   digitalWrite(MT1P1, HIGH);
   digitalWrite(MT1P2, LOW);
@@ -368,7 +424,8 @@ int detectarColor(){
 
 bool detectarObstaculo(){
 
-  int distanciaRecorrida = 1000000;
+  //int distanciaRecorrida = 1000000;
+  long int distanciaRecorrida = 1000000;
   
   digitalWrite(TRIGGERUS, HIGH);
   delayMicroseconds(10);
@@ -398,7 +455,7 @@ void loopAutomatico(){
   colorDetectado = detectarColor();
   // Rojo
   if(colorDetectado == 1){
-    barrer();
+    barrer(2000);
   }
   // Azul
   else if(colorDetectado == 2){
@@ -406,7 +463,7 @@ void loopAutomatico(){
   }
   // Negro
   else if(colorDetectado == 3){
-    retroceder();
+    retroceder(2000);
   }
   // Ninguno
   else{
@@ -417,7 +474,7 @@ void loopAutomatico(){
     if(obstaculo){
       // Mover derecha o izquierda
     }else{
-      adelante();
+      adelante(2000);
     }
     
   }
@@ -433,23 +490,23 @@ void loopManual(){
   
   if(state == 0){
     for(int i = 0;i<5;i++){
-      adelante();
+      adelante(2000);
     }
   }else if(state == 1){
     for(int i = 0;i<5;i++){
-      atras();
+      atras(2000);
     }
   }else if(state == 2){
     for(int i = 0;i<5;i++){
-      derecha();
+      derecha(2000);
     }
   }else if(state == 3){
     for(int i = 0;i<5;i++){
-      izquierda();
+      izquierda(2000);
     }
   }else if(state == 4){
     for(int i = 0;i<5;i++){
-      barrer();
+      barrer(2000);
     }
   }else if(state == 5){
     for(int i = 0;i<5;i++){
