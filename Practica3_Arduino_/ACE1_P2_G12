@@ -3,6 +3,9 @@
 */
 
 #include <EEPROM.h>
+#include <SoftwareSerial.h>
+
+SoftwareSerial BT(0,1);
 
 /*
   ------------------------------Fin de librerias---------------------------------
@@ -68,7 +71,6 @@
  *      5 = LIMPIAR MEMORIA
  *      6 = GUARDAR MEMORIA
  */
-int state = -1;
 bool modoAutomatico = true;
 
 
@@ -100,6 +102,8 @@ String timer="";
 int actual=0;
 int pos=0;
 int ID=0;
+
+bool entraSwitch=false;
 
 
 /*
@@ -181,6 +185,7 @@ void otrasAcciones(char entrada){
  */
   
 switch(actual){
+
     case 0:
       if(entrada=='R'){
         actual=1;
@@ -189,6 +194,7 @@ switch(actual){
         actual=5;
         }
         else if(entrada=='S'){
+        entraSwitch=false;
         char *s;
         char param[10]="";
         String envio="";
@@ -202,6 +208,11 @@ switch(actual){
         }
     
     }
+    delay(10000);
+    Serial.println(envio);
+    delay(4000);
+    Serial.println(envio);
+    envio="";
        }
     break;
     case 1:  
@@ -218,14 +229,17 @@ switch(actual){
       actual=3;
      
     break;
-    case 3:  
+    case 3: 
+     
     if(entrada=='F'){
-    
+      Serial.print("FIN");
       EEPROM.put(0, lista);
       actual=0;
       ID++;
       nombre="";
       pos=0;
+      entraSwitch=false;
+
       if(ID==3){
         ID=0;
       }
@@ -236,15 +250,16 @@ switch(actual){
           actual=4;
           
         }
-        
-        lista[ID].instrucciones[pos]=entrada; 
-        lista[ID].timer[pos]=timer.toInt();
-     
-        pos++;
+        else{
+            lista[ID].instrucciones[pos]=entrada;
+        }
+    
       } 
     break;
     case 4:
       if(entrada==';'){
+          lista[ID].timer[pos]=timer.toInt();
+          pos++; 
           actual=3;
           timer="";
           
@@ -260,6 +275,7 @@ switch(actual){
           recorrerEleccion(resultado);
           actual=0;
           nombre=""; 
+          entraSwitch=false;
         }
         else{
           nombre+=entrada;
@@ -278,8 +294,8 @@ switch(actual){
 /*
   --------------------Movimiento--------------------
 */
-void adelante(int param){
-  int cDelay=param*10000;
+void adelante(int cDelay){
+
   // Encendido
   digitalWrite(MT1P1, HIGH);
   digitalWrite(MT1P2, LOW);
@@ -387,28 +403,37 @@ int detectarColor(){
   B = pulseIn(SOut, digitalRead(SOut) == HIGH ? LOW : HIGH);
   digitalWrite(S2, HIGH);
   G = pulseIn(SOut, digitalRead(SOut) == HIGH ? LOW : HIGH);
-
+/*
   Serial.print("    ");
   Serial.print(R, DEC);
   Serial.print("    ");
   Serial.print(G, DEC);
   Serial.print("    ");
   Serial.print(B, DEC);
-
+  Serial.print("\n");
+*/
   // Si detecta color Rojo
-  if(R < B && G > B && R < 35){
+  if(R>38&&R<45){
+     // Serial.println("Rojo");
     return 1;
   }
   // Si detecta color Azul
-  else if(B < R && B < G && G < R){
+  else if(R>75&&R<80){
+    //  Serial.println("Azul");
     return 2;
   }
+  else if(R>60&&R<72){
+    //  Serial.println("Azul");
+    return 2;
+  }
+  
   // Si detecta color Negro
   /*else if(){
     return 3;
   }*/
   // Si no detecta ni uno
   else{
+      //Serial.println("Otro...");
     return 0;
   }
   
@@ -433,9 +458,14 @@ bool detectarObstaculo(){
   int tiempo = pulseIn(ECHO, HIGH);
   
   distanciaRecorrida = tiempo/59;
+/*
+  Serial.println("Distancia: ");
+  Serial.print(distanciaRecorrida);
+  Serial.println();
+  */
 
   // Si detecta un obstaculo cerca
-  if(distanciaRecorrida < 10){
+  if(distanciaRecorrida < 10&&distanciaRecorrida>0){
     return true;
   }
   // Si no detecta obstaculo cerca
@@ -453,16 +483,21 @@ void loopAutomatico(){
   int colorDetectado = 0;  
 
   colorDetectado = detectarColor();
+  //Serial.println(colorDetectado);
+
   // Rojo
   if(colorDetectado == 1){
+   // Serial.print("Rojo \n");
     barrer(2000);
   }
   // Azul
   else if(colorDetectado == 2){
+    Serial.print("Azul \n");
     modoAutomatico = false;
   }
   // Negro
   else if(colorDetectado == 3){
+    //Serial.print("Negro \n");
     retroceder(2000);
   }
   // Ninguno
@@ -471,75 +506,115 @@ void loopAutomatico(){
     bool obstaculo = false;
 
     obstaculo = detectarObstaculo();
+
+   // Serial.print(obstaculo + "\n");
+    
     if(obstaculo){
-      // Mover derecha o izquierda
+     // Serial.print("Detecto obstaculo \n");
+     // atras(2000);
+      //derecha(2000);
     }else{
-      adelante(2000);
+     // Serial.print("No detecto obstaculo \n");
+     // adelante(1000);
     }
     
   }
 }
 
 void loopManual(){
+  int resultado;
+  char state;
+ // Serial.print("Entro a loop manual \n");
   /*
     Solo debe de detectar la accion que le envia el telefono y realizar el movimiento correspondiente
   */
   if(Serial.available()>0){
-    state = Serial.read();
-  }
-  
-  if(state == 0){
-    for(int i = 0;i<5;i++){
+    resultado= Serial.read();
+    state=resultado;
+    Serial.print("Resutlado: ");
+    Serial.println(state);
+if(!entraSwitch){
+  if(state == '0'){
       adelante(2000);
-    }
-  }else if(state == 1){
-    for(int i = 0;i<5;i++){
+    
+  }else if(state == '1'){
+    
       atras(2000);
-    }
-  }else if(state == 2){
-    for(int i = 0;i<5;i++){
+    
+  }else if(state == '2'){
       derecha(2000);
-    }
-  }else if(state == 3){
-    for(int i = 0;i<5;i++){
+    
+  }else if(state == '3'){
       izquierda(2000);
-    }
-  }else if(state == 4){
-    for(int i = 0;i<5;i++){
+  }else if(state == '4'){
       barrer(2000);
-    }
-  }else if(state == 5){
+   
+  }else if(state == '5'){
     for(int i = 0;i<5;i++){
       for (int i = 0 ; i < EEPROM.length() ; i++) {
         EEPROM.write(i, 0);
       }
     }
-  }else if(state == 6){
+  }else if(state == '6'){
     for(int i = 0;i<5;i++){
       // Guardar ruta en memoria
     }
   }else{
+    Serial.println("Entro a otras acciones");
+    entraSwitch=true;
+    otrasAcciones(state);
 
-    char entrada;
-    entrada=state;
-    otrasAcciones(entrada);
-    Serial.println("Saber ni que pedo paso, state = " + state);
   }
+
 }
+ else{
+    Serial.println("Entro a otras acciones");
+    Serial.print("Actual: ");
+    Serial.println(actual);
+    otrasAcciones(state);
+  }
+ }
+}
+  
+  
+  
+  
+
 
 void setup() {
 
   Serial.begin(9600);
 
+  // Setup del Ultrasonico
+  pinMode(TRIGGERUS, OUTPUT);
+  pinMode(ECHO, INPUT);
+  digitalWrite(TRIGGERUS, LOW);
+
+  // Setup del sensor de color
+  pinMode(S1,OUTPUT);
+  pinMode(S2,OUTPUT);
+  pinMode(S3,OUTPUT);
+  pinMode(S4,OUTPUT);
+  pinMode(SOut,INPUT);
+
+  digitalWrite(S1,HIGH);
+  digitalWrite(S2,HIGH);
+
+  // Setup inicio
+  pinMode(INICIO, INPUT);
+  digitalWrite(INICIO, LOW);
+
+  // Setup para EEPROM
   inicializarArreglos();
 
 }
 
+
 void loop() {
 
-  if(digitalRead(INICIO == HIGH)){
+  /*if(digitalRead(INICIO == HIGH)){
     modoAutomatico = !modoAutomatico;
-  }
+  }*/
 
   if(modoAutomatico){
     
