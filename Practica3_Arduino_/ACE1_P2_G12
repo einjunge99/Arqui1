@@ -482,7 +482,7 @@ void loopAutomatico(){
   // Negro
   else if(colorDetectado == 3){
     // Serial.print("Negro \n");
-    retroceder(2000);
+    retroceder(1000);
   }
   // Ninguno
   else{
@@ -495,7 +495,7 @@ void loopAutomatico(){
     
     if(obstaculo){
       // Serial.print("Detecto obstaculo \n");
-      atras(2000);
+      atras(1000);
     }else{
       // Serial.print("No detecto obstaculo \n");
       adelante(1000);
@@ -535,6 +535,15 @@ if(!entraSwitch){
     for (int i = 0 ; i < EEPROM.length() ; i++) {
       EEPROM.write(i, 0);
     }
+    
+   for (int i = 0 ; i < SIZEROUTES ; ++i) {
+         for(int k=0;k<STEPSIZE;k++){
+         lista[i].nombre[k]=' ';
+         lista[i].instrucciones[k]='X';
+         lista[i].timer[k]=0;
+        }
+    }
+    
   }else if(state == '6'){
     for(int i = 0;i<5;i++){
       // Guardar ruta en memoria
