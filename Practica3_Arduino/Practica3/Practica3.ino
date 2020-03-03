@@ -505,9 +505,12 @@ void loopAutomatico(){
 }
 
 void loopManual(){
+<<<<<<< Updated upstream
   int resultado;
   char state;
  // Serial.print("Entro a loop manual \n");
+=======
+>>>>>>> Stashed changes
   /*
     Solo debe de detectar la accion que le envia el telefono y realizar el movimiento correspondiente
   */
@@ -555,12 +558,18 @@ if(!entraSwitch){
 
   }
 
+<<<<<<< Updated upstream
 }
  else{
     Serial.println("Entro a otras acciones");
     Serial.print("Actual: ");
     Serial.println(actual);
     otrasAcciones(state);
+=======
+    char entrada;
+    entrada=state;
+    otrasAcciones(entrada);
+>>>>>>> Stashed changes
   }
  }
 }
